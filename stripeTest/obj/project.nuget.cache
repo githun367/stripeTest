@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "PWtyELbrNiY=",
+  "success": true,
+  "projectFilePath": "C:\\c#\\stripeTest\\stripeTest.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jasmi\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.10\\microsoft.aspnetcore.openapi.9.0.10.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\stripe.net\\49.0.0\\stripe.net.49.0.0.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\system.configuration.configurationmanager\\8.0.0\\system.configuration.configurationmanager.8.0.0.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\system.diagnostics.eventlog\\8.0.0\\system.diagnostics.eventlog.8.0.0.nupkg.sha512",
+    "C:\\Users\\jasmi\\.nuget\\packages\\system.security.cryptography.protecteddata\\8.0.0\\system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

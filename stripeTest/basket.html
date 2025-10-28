@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Indkøbskurv</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin: 40px;
+    }
+    .basket-container {
+      flex: 1;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
+    .total {
+      width: 300px;
+      margin-left: 50px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+      text-align: right;
+      font-size: 1.1em;
+    }
+    .empty {
+      font-size: 1.1em;
+      color: #777;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      color: white;
+    }
+    .back-btn {
+      background-color: #6c757d;
+    }
+    .back-btn:hover { background-color: #5a6268; }
+
+    .pay-btn {
+      background-color: #007bff;
+    }
+    .pay-btn:disabled {
+      background-color: #9fc1ff;
+      cursor: not-allowed;
+    }
+    .pay-btn:hover:not(:disabled) { background-color: #0056b3; }
+
+    .clear-btn {
+      background-color: #dc3545;
+      margin-left: 8px;
+    }
+    .clear-btn:hover { background-color: #b02a37; }
+
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="basket-container">
+    <h1>Din indkøbskurv</h1>
+    <table id="basketTable">
+      <thead>
+        <tr>
+          <th>Produkt</th>
+          <th>Pris (DKK)</th>
+          <th>Antal</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody id="basketBody">
+        <!-- Produkter indsættes her via JavaScript -->
+      </tbody>
+    </table>
+    <p id="emptyText" class="empty" style="display:none;">Din kurv er tom.</p>
+  </div>
+
+  <div class="total">
+    <p><strong>Total:</strong></p>
+    <p id="totalPrice">0 DKK</p>
+
+    <div class="controls">
+      <button class="back-btn" id="backToShop">Tilbage til butik</button>
+      <button class="clear-btn" id="clearBasket">Tøm kurv</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button id="checkoutBtn" class="pay-btn">Betal med kort</button>
+    </div>
+  </div>
+
+  <!-- Stripe JS -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    // Samme publishable key som i dit index-script (byt hvis du bruger en anden)
+    const stripe = Stripe('pk_test_51SL2gARssIVs1btql1PTPsNWg39ZquQuuNY7Rhy3U1UIrKatRjlehA2AuD7w8VMpUm3Whpy5mvfMHNWnASAfmZ1c00YNvUYqWO');
+
+    // Hent produkter fra localStorage
+    let basketData = JSON.parse(localStorage.getItem('shoppingBasket') || '[]');
+    const basketBody = document.getElementById('basketBody');
+    const totalPriceEl = document.getElementById('totalPrice');
+    const emptyText = document.getElementById('emptyText');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const backToShop = document.getElementById('backToShop');
+    const clearBasket = document.getElementById('clearBasket');
+
+    function renderBasket() {
+      basketBody.innerHTML = '';
+      if (!Array.isArray(basketData) || basketData.length === 0) {
+        emptyText.style.display = 'block';
+        totalPriceEl.textContent = '0 DKK';
+        checkoutBtn.disabled = true;
+        return;
+      }
+      emptyText.style.display = 'none';
+      let total = 0;
+      basketData.forEach((item, index) => {
+        // Sikkerhed: sørg for tal
+        const price = Number(item.price) || 0;
+        const amount = Number(item.amount) || 0;
+        const subtotal = price * amount;
+        total += subtotal;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${escapeHtml(item.productName)}</td>
+          <td>${price.toFixed(2)}</td>
+          <td>${amount}</td>
+          <td>${subtotal.toFixed(2)}</td>
+        `;
+        basketBody.appendChild(row);
+      });
+      totalPriceEl.textContent = total.toFixed(2) + ' DKK';
+      checkoutBtn.disabled = false;
+    }
+
+    // Simpel escaping for produktnavn for at undgå XSS hvis nogen putter mærkelige data i localStorage
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Tilbage til butik
+    backToShop.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+
+    // Tøm kurv
+    clearBasket.addEventListener('click', () => {
+      if (!confirm('Vil du tømme indkøbskurven?')) return;
+      basketData = [];
+      localStorage.removeItem('shoppingBasket');
+      renderBasket();
+    });
+
+    // Checkout: send produktdata til backend og redirect til Stripe Checkout
+    checkoutBtn.addEventListener('click', async () => {
+      if (!Array.isArray(basketData) || basketData.length === 0) {
+        alert('Din kurv er tom.');
+        return;
+      }
+
+      // Byg payload med samme struktur som backend forventer
+      // Sørg for at hvert produkt har productName (string), price (number) og amount (int)
+      const productData = basketData.map(p => ({
+        productName: p.productName,
+        price: Number(p.price),
+        amount: Number(p.amount),
+        // valgfri: currency: p.currency || 'dkk'
+      }));
+
+      try {
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Opretter betaling...';
+
+        const res = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productData })
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error('Backend error:', txt);
+          alert('Noget gik galt ved kontakt til serveren: ' + txt);
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Betal med kort';
+          return;
+        }
+
+        const data = await res.json();
+        if (data.sessionId) {
+          // Redirect to Stripe Checkout
+          const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+          if (error) {
+            console.error(error);
+            alert(error.message);
+            checkoutBtn.disabled = false;
+            checkoutBtn.textContent = 'Betal med kort';
+          }
+        } else {
+          alert('Bestilling sendt. Tak!');
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Betal med kort';
+        }
+      } catch (err) {
+        console.error('Fejl ved oprettelse af checkout-session:', err);
+        alert('Der skete en fejl. Se konsollen for detaljer.');
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Betal med kort';
+      }
+    });
+
+    // Initial render
+    renderBasket();
+  </script>
+
+</body>
+</html>

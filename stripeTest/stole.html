@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="da">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Stole</title>
+  <link rel="stylesheet" href="C:\c#\stripeTest\style.css">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+
+<body>
+  <header>
+    <style>
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-image: url("images/IMG.png");
+        padding: 1rem 2rem;
+        margin: 1rem auto;
+        border: 1px solid #eee;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        max-width: 1200px;
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+      }
+    </style>
+    <div class="logo">DAMRON</div>
+    <nav>
+      <ul style="display: flex; gap: 2rem; list-style: none; margin: 0; padding: 0;">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#">Shop</a></li>
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Favorites</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main style="padding: 3rem 2rem; text-align: center;">
+    <h1>Stole</h1>
+
+    <!-- Produktgrid -->
+    <div class="product-grid" style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:2rem;">
+      <div class="product" style="border:1px solid #ddd;padding:1rem 1.5rem;border-radius:10px;width:180px;">
+        <h3>Produkt A</h3>
+        <p>Pris: 199,00 DKK</p>
+        <label>Antal:
+          <input type="number" id="qtyA" min="0" value="0" style="width:60px;padding:4px;">
+        </label>
+      </div>
+
+      <div class="product" style="border:1px solid #ddd;padding:1rem 1.5rem;border-radius:10px;width:180px;">
+        <h3>Produkt B</h3>
+        <p>Pris: 129,00 DKK</p>
+        <label>Antal:
+          <input type="number" id="qtyB" min="0" value="0" style="width:60px;padding:4px;">
+        </label>
+      </div>
+
+      <div class="product" style="border:1px solid #ddd;padding:1rem 1.5rem;border-radius:10px;width:180px;">
+        <h3>Produkt C</h3>
+        <p>Pris: 89,00 DKK</p>
+        <label>Antal:
+          <input type="number" id="qtyC" min="0" value="0" style="width:60px;padding:4px;">
+        </label>
+      </div>
+
+      <div class="product" style="border:1px solid #ddd;padding:1rem 1.5rem;border-radius:10px;width:180px;">
+        <h3>Produkt D</h3>
+        <p>Pris: 49,00 DKK</p>
+        <label>Antal:
+          <input type="number" id="qtyD" min="0" value="0" style="width:60px;padding:4px;">
+        </label>
+      </div>
+    </div>
+
+    <!-- Knapper -->
+    <div style="margin-top:2rem;">
+      <button id="checkout-btn" class="primary-btn">Køb nu</button>
+      <button id="basket" class="secondary-btn">Indkøbskurv</button>
+    </div>
+  </main>
+
+  <!-- Samme Stripe-script som før -->
+  <script>
+    const stripe = Stripe('pk_test_51SL2gARssIVs1btql1PTPsNWg39ZquQuuNY7Rhy3U1UIrKatRjlehA2AuD7w8VMpUm3Whpy5mvfMHNWnASAfmZ1c00YNvUYqWO');
+
+    document.getElementById('basket').addEventListener('click', (e) => {
+      const products = document.querySelectorAll('.product');
+      const productData = Array.from(products)
+        .map(product => {
+          const name = product.querySelector('h3').textContent.trim();
+          const priceText = product.querySelector('p').textContent.trim();
+          const price = parseFloat(priceText.replace(/[^\d,]/g, '').replace(',', '.'));
+          const amount = parseInt(product.querySelector('input[type="number"]').value, 10) || 0;
+          return { productName: name, price: price, amount: amount };
+        })
+        .filter(item => item.amount > 0);
+
+      window.location.href = '/basket';
+
+      if (productData.length === 0) {
+        alert('Vælg mindst ét produkt før du lægger noget i indkøbskurven.');
+        return;
+      }
+
+      let basket = [];
+      try {
+        const existing = localStorage.getItem('shoppingBasket');
+        basket = existing ? JSON.parse(existing) : [];
+      } catch (err) {
+        console.warn('Kunne ikke læse eksisterende indkøbskurv:', err);
+        basket = [];
+      }
+
+      productData.forEach(newItem => {
+        const idx = basket.findIndex(b => b.productName === newItem.productName);
+        if (idx > -1) {
+          basket[idx].amount = (parseInt(basket[idx].amount, 10) || 0) + newItem.amount;
+          basket[idx].price = newItem.price;
+        } else {
+          basket.push({ ...newItem });
+        }
+      });
+
+      try {
+        localStorage.setItem('shoppingBasket', JSON.stringify(basket));
+        alert('Produkter lagt i indkøbskurven.');
+      } catch (err) {
+        alert('Kunne ikke opdatere indkøbskurven.');
+      }
+    });
+
+    document.getElementById('checkout-btn').addEventListener('click', async () => {
+      const products = document.querySelectorAll('.product');
+      const productData = Array.from(products)
+        .map(product => {
+          const name = product.querySelector('h3').textContent.trim();
+          const priceText = product.querySelector('p').textContent.trim();
+          const price = parseFloat(priceText.replace(/[^\d,]/g, '').replace(',', '.'));
+          const amount = parseInt(product.querySelector('input[type="number"]').value, 10);
+          return { productName: name, price: price, amount: amount };
+        })
+        .filter(product => product.amount > 0);
+
+      if (productData.length === 0) {
+        alert('Vælg mindst ét produkt før du køber.');
+        return;
+      }
+
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productData })
+      });
+
+      if (!res.ok) {
+        alert('Noget gik galt ved kontakt til serveren.');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.sessionId) {
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (error) alert(error.message);
+      } else {
+        alert('Bestilling sendt. Tak!');
+      }
+    });
+  </script>
+</body>
+</html>

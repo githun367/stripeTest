@@ -1,0 +1,65 @@
+/* ===== HEADER FIX & FARVER ===== */
+
+/* Gør <h1> til header-lignende container */
+body {
+  background: hotpink !important;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff; /* hvid baggrund */
+  padding: 1rem 2rem;
+  margin: 1rem auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  max-width: 1200px;
+  position: sticky;
+  top: 10px;
+  z-index: 100;
+}
+
+/* Logoet */
+.logo {
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: 1px;
+  color: #4b2e05; /* mørk brun */
+}
+
+/* Navigation */
+nav ul {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+}
+
+nav a {
+  text-decoration: none;
+  color: #2a201a; /* sortbrun */
+  font-weight: 500;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+  padding-bottom: 2px;
+}
+
+nav a:hover {
+  color: #b89a67; /* beige/guld nuance */
+  border-bottom: 2px solid #b89a67;
+}
+
+/* Ikoner (hvis du tilføjer dem senere) */
+.icons {
+  display: flex;
+  gap: 1rem;
+  font-size: 1.3rem;
+  color: #2a201a;
+  cursor: pointer;
+}
+
+/* Global farvetema justering */
+body {
+  background-color: #e0d0b2; /* meget lys beige baggrund */
+  color: #2a201a;
+}
+
